@@ -1,10 +1,13 @@
-import { RECT_SIZE } from "../common/constants";
+import { FIGURES, FIELD } from "../common";
 
 
 export interface RectData {
     x: number;
     y: number;
     size: number;
+    active: boolean;
+    filled: boolean;
+    color?: FIGURES;
 };
 
 export class Rect {
@@ -12,7 +15,9 @@ export class Rect {
         this._data = {
             x: startX || 0,
             y: startY || 0,
-            size: RECT_SIZE
+            size: FIELD.RECT_SIZE,
+            active: false,
+            filled: false,
         }
     }
 
@@ -20,5 +25,53 @@ export class Rect {
 
     get data() {
         return this._data;
+    }
+
+    get x() {
+        return this._data.x;
+    }
+
+    get color() {
+        return this._data.color;
+    }
+
+    get y() {
+        return this._data.y;
+    }
+
+    set y(y: number) {
+        this._data.y = y;
+    }
+
+    get active() {
+        return this._data.active;
+    }
+
+    set active(value: boolean) {
+        this._data.active = value;
+    }
+
+    get filled() {
+        return this._data.filled;
+    }
+
+    set filled(value: boolean) {
+        this._data.filled = value;
+    }
+
+    activate = (color?: FIGURES) => {
+        this._data.active = true;
+        this._data.filled = true;
+        this._data.color = color;
+    }
+
+    disactivate = () => {
+        this._data.active = false;
+    }
+
+    off = () => {
+        this._data.active = false;
+        this._data.filled = false;
+        this._data.color = undefined;
     }
 }
