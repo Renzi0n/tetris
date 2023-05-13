@@ -60,9 +60,11 @@ export class Rect {
     }
 
     activate = (color?: FIGURES) => {
-        this._data.active = true;
-        this._data.filled = true;
-        this._data.color = color;
+        if (!this._data.active && !this._data.filled) {
+            this._data.active = true;
+            this._data.filled = true;
+            this._data.color = color;
+        }
     }
 
     disactivate = () => {

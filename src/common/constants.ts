@@ -1,5 +1,5 @@
 export const FIELD = {
-    W: 800,
+    W: 400,
     H: 800,
     RECT_SIZE: 40,
     COLOR: '#FFFFFF',

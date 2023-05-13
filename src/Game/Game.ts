@@ -1,12 +1,18 @@
 import { FIELD, FIGURES } from "../common";
 import { Field } from "../Field";
 import { Rect } from "../Rect";
+const gameWrapper = document.querySelector('#game') as HTMLElement;
+const score = document.querySelector('#score') as HTMLElement;
+const startMenu = document.querySelector('#start-menu') as HTMLElement;
 
 export class Game {
     constructor() {
         const canv = <HTMLCanvasElement>document.getElementById('canvas');
         this.ctx = canv.getContext('2d') as CanvasRenderingContext2D;
         
+        gameWrapper.style.display = 'block';
+        startMenu.style.display = 'none';
+
         canv.width = FIELD.W;
         canv.height = FIELD.H;
         canv.style.background = FIELD.COLOR;
@@ -47,7 +53,7 @@ export class Game {
 
     private defaultTimeDelay = 1000;
     private moveTimeDelay = 100;
-    private moveDownTimeDelay = 20;
+    private moveDownTimeDelay = 40;
     private rotateTimeDelay = 200;
     private timerDefault = Date.now();
     private moveActiveFigure = () => {
@@ -90,7 +96,7 @@ export class Game {
     }
 
     private render = () => {
-        requestAnimationFrame(this.render);
+        this.requestId = requestAnimationFrame(this.render);
         this.ctx.clearRect(0, 0, FIELD.W, FIELD.H);
         this.drawNet();
 
@@ -100,8 +106,15 @@ export class Game {
         if (this.keysPressed.has('ArrowRight')) this.moveRightActiveFigure();
         if (this.keysPressed.has('ArrowDown')) this.moveDownActiveFigure();
         if (this.keysPressed.has('ArrowUp')) this.rotateActiveFigure();
+        this.setScore();
 
         this.field.filledRects.forEach((rect) => this.generateRect(rect))
+
+        if (this.field.isOver) this.stop();
+    }
+
+    setScore = () => {
+        score.textContent = `Score: ${this.field.score}`;
     }
 
     private keysPressed = new Set<string>();
@@ -114,9 +127,32 @@ export class Game {
         this.keysPressed.delete(evt.code);
     }
 
+    requestId: number | null = null;
+
     start() {
         document.addEventListener('keydown', this.linstenerKeydown)
         document.addEventListener('keyup', this.linstenerKeyup)
         requestAnimationFrame(this.render);
+    }
+
+    stop = () => {
+        if (this.requestId !== null) {
+            cancelAnimationFrame(this.requestId);
+            document.removeEventListener('keydown', this.linstenerKeydown)
+            document.removeEventListener('keyup', this.linstenerKeyup)
+            this.field = null as unknown as Field;
+        } 
+    }
+
+    pause = () => {
+        if (this.requestId !== null) {
+            cancelAnimationFrame(this.requestId);
+        } 
+    }
+
+    continue = () => {
+        if (this.requestId !== null) {
+            requestAnimationFrame(this.render);
+        }
     }
 }

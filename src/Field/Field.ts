@@ -62,96 +62,123 @@ export class Field {
         }, [] as Rect[])
     }
 
+    isOver = false;
+
+    checkIsOver = (willGeneratedRects: Rect[]) => {
+        if (this.activeRects.length) {
+            return willGeneratedRects.every((rect, ind) => {
+                if (rect.x === this.activeRects[ind].x && rect.y === this.activeRects[ind].y) return true;
+                return false;
+            });
+        }
+
+        return false;
+    }
+
     generatingFigureMap = {
         [FIGURES.J]: () => {
             const firstRectX = getRandomIntFromRange(1, this._data[0].length - 1);
-            this._data[0][firstRectX].activate(FIGURES.J);
 
+            const firstRect = this._data[0][firstRectX];
             const secondRect = this._data[1][firstRectX];
-            secondRect.activate(FIGURES.J);
-
             const thirdRect = this._data[2][firstRectX];
-            thirdRect.activate(FIGURES.J);
-
             const fourthRect = this._data[2][firstRectX - 1];
+
+            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
+
+            firstRect.activate(FIGURES.J);
+            secondRect.activate(FIGURES.J);
+            thirdRect.activate(FIGURES.J);
             fourthRect.activate(FIGURES.J);
         },
         [FIGURES.I]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 1);
-            this._data[0][firstRectX].activate(FIGURES.I);
 
+            const firstRect = this._data[0][firstRectX];
             const secondRect = this._data[1][firstRectX];
-            secondRect.activate(FIGURES.I);
-
             const thirdRect = this._data[2][firstRectX];
-            thirdRect.activate(FIGURES.I);
-
             const fourthRect = this._data[3][firstRectX];
+
+            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
+
+            firstRect.activate(FIGURES.I);
+            secondRect.activate(FIGURES.I);
+            thirdRect.activate(FIGURES.I);
             fourthRect.activate(FIGURES.I);
         },
         [FIGURES.O]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 2);
-            this._data[0][firstRectX].activate(FIGURES.O);
 
+            const firstRect = this._data[0][firstRectX];
             const secondRect = this._data[0][firstRectX + 1];
-            secondRect.activate(FIGURES.O);
-
             const thirdRect = this._data[1][firstRectX];
-            thirdRect.activate(FIGURES.O);
-
             const fourthRect = this._data[1][firstRectX + 1];
+
+            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
+
+            firstRect.activate(FIGURES.O);
+            secondRect.activate(FIGURES.O);
+            thirdRect.activate(FIGURES.O);
             fourthRect.activate(FIGURES.O);
         },
         [FIGURES.L]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 2);
-            this._data[0][firstRectX].activate(FIGURES.L);
 
+            const firstRect = this._data[0][firstRectX];
             const secondRect = this._data[1][firstRectX];
-            secondRect.activate(FIGURES.L);
-
             const thirdRect = this._data[2][firstRectX];
-            thirdRect.activate(FIGURES.L);
-
             const fourthRect = this._data[2][firstRectX + 1];
+
+            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
+
+            firstRect.activate(FIGURES.L);
+            secondRect.activate(FIGURES.L);
+            thirdRect.activate(FIGURES.L);
             fourthRect.activate(FIGURES.L);
         },
         [FIGURES.Z]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 3);
-            this._data[0][firstRectX].activate(FIGURES.Z);
 
+            const firstRect = this._data[0][firstRectX];
             const secondRect = this._data[0][firstRectX + 1];
-            secondRect.activate(FIGURES.Z);
-
             const thirdRect = this._data[1][firstRectX + 1];
-            thirdRect.activate(FIGURES.Z);
-
             const fourthRect = this._data[1][firstRectX + 2];
+            
+            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
+            
+            firstRect.activate(FIGURES.Z);
+            secondRect.activate(FIGURES.Z);
+            thirdRect.activate(FIGURES.Z);
             fourthRect.activate(FIGURES.Z);
         },
         [FIGURES.T]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 3);
-            this._data[1][firstRectX].activate(FIGURES.T);
 
+            const firstRect = this._data[1][firstRectX];
             const secondRect = this._data[1][firstRectX + 1];
-            secondRect.activate(FIGURES.T);
-
             const thirdRect = this._data[0][firstRectX + 1];
-            thirdRect.activate(FIGURES.T);
-
             const fourthRect = this._data[1][firstRectX + 2];
+
+            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
+
+            firstRect.activate(FIGURES.T);
+            secondRect.activate(FIGURES.T);
+            thirdRect.activate(FIGURES.T);
             fourthRect.activate(FIGURES.T);
         },
         [FIGURES.S]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 3);
-            this._data[1][firstRectX].activate(FIGURES.S);
 
+            const firstRect = this._data[1][firstRectX];
             const secondRect = this._data[1][firstRectX + 1];
-            secondRect.activate(FIGURES.S);
-
             const thirdRect = this._data[0][firstRectX + 1];
-            thirdRect.activate(FIGURES.S);
-
             const fourthRect = this._data[0][firstRectX + 2];
+            
+            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
+
+            firstRect.activate(FIGURES.S);
+            secondRect.activate(FIGURES.S);
+            thirdRect.activate(FIGURES.S);
             fourthRect.activate(FIGURES.S);
         },
     };
@@ -161,6 +188,8 @@ export class Field {
         const applyFigure = this.generatingFigureMap[randomFigureKey];
         applyFigure();
     }
+
+    score = 0;
 
     directionsMap: directionsMap = {
         'default': (rect: Rect) => ({
@@ -181,13 +210,20 @@ export class Field {
         }),
     }
 
+    scoresForFillingLines = [100, 300, 700, 1500];
+
     dropFilledLines = () => {
         let filledLinesIndexes: number[] = [];
         this.data.forEach((line, yInd) => { 
             if (line.every((rect) => rect.filled)) filledLinesIndexes.push(yInd);
         })
 
-        if (filledLinesIndexes.length > 0) {
+        const filledLinesCount = filledLinesIndexes.length;
+
+        if (filledLinesCount > 0) {
+            if (this.scoresForFillingLines[filledLinesCount - 1]) this.score += this.scoresForFillingLines[filledLinesCount - 1];
+            else this.score += this.scoresForFillingLines.at(-1)!;
+
             filledLinesIndexes.forEach((filledLineIndex) => {
                 this._data.splice(filledLineIndex, 1);
                 this._data.forEach((line, lineIndex) => {
@@ -220,9 +256,11 @@ export class Field {
                 rect.off();
                 return rect;
             });
+            if (direction === 'down') this.score += 1;
 
             prevRects.forEach((rect) => {
                 const { yInd, xInd } = this.directionsMap[direction](rect);
+
                 this._data[yInd][xInd].activate(prevColor);
             });
         } else if (direction === 'down' || direction === 'default') {
@@ -242,6 +280,23 @@ export class Field {
         })
     }
 
+    tryRotate = (newCoords: { xInd: number; yInd: number; }[]) => {
+        const oldColor = this.activeRects[0].color;
+        const isRotatingAllow = this.checkRotateAllowing(newCoords);
+        if (isRotatingAllow) {
+            this.activeRects.map(rect => {
+                rect.off();
+                return rect;
+            });
+            this.data[newCoords[0].yInd][newCoords[0].xInd].activate(oldColor);
+            this.data[newCoords[1].yInd][newCoords[1].xInd].activate(oldColor);
+            this.data[newCoords[2].yInd][newCoords[2].xInd].activate(oldColor);
+            this.data[newCoords[3].yInd][newCoords[3].xInd].activate(oldColor);
+        }
+
+        return isRotatingAllow;
+    }
+
     rotateActiveFigure = () => {
         const oldX1 = this.activeRects[0].x;
         const oldY1 = this.activeRects[0].y;
@@ -251,7 +306,6 @@ export class Field {
         const oldY3 = this.activeRects[2].y;
         const oldX4 = this.activeRects[3].x;
         const oldY4 = this.activeRects[3].y;
-        const oldColor = this.activeRects[0].color;
       
         const centerX = Math.floor((oldX1 + oldX2 + oldX3 + oldX4) / 4 / FIELD.RECT_SIZE) * FIELD.RECT_SIZE + (FIELD.RECT_SIZE / 2);
         const centerY = Math.floor((oldY1 + oldY2 + oldY3 + oldY4) / 4 / FIELD.RECT_SIZE) * FIELD.RECT_SIZE + (FIELD.RECT_SIZE / 2);
@@ -275,32 +329,20 @@ export class Field {
             },
         ]
 
-        const isRotatingAllow = this.checkRotateAllowing(newCoords);
+        const isRotatingAllow = this.tryRotate(newCoords);
         
-        if (isRotatingAllow) {
-            this.activeRects.map(rect => {
-                rect.off();
-                return rect;
-            });
-            this.data[newCoords[0].yInd][newCoords[0].xInd].activate(oldColor);
-            this.data[newCoords[1].yInd][newCoords[1].xInd].activate(oldColor);
-            this.data[newCoords[2].yInd][newCoords[2].xInd].activate(oldColor);
-            this.data[newCoords[3].yInd][newCoords[3].xInd].activate(oldColor);
-        } else {
+        if (!isRotatingAllow) {
             newCoords = newCoords.map(({ xInd, yInd }) => ({
                 xInd: xInd + 1,
                 yInd
             }))
-            const isRotatingAllow = this.checkRotateAllowing(newCoords);
-            if (isRotatingAllow) {
-                this.activeRects.map(rect => {
-                    rect.off();
-                    return rect;
-                });
-                this.data[newCoords[0].yInd][newCoords[0].xInd].activate(oldColor);
-                this.data[newCoords[1].yInd][newCoords[1].xInd].activate(oldColor);
-                this.data[newCoords[2].yInd][newCoords[2].xInd].activate(oldColor);
-                this.data[newCoords[3].yInd][newCoords[3].xInd].activate(oldColor);
+            const isRotatingAllow = this.tryRotate(newCoords);
+            if (!isRotatingAllow) {
+                newCoords = newCoords.map(({ xInd, yInd }) => ({
+                    xInd: xInd - 3,
+                    yInd
+                }))
+                this.tryRotate(newCoords);
             }
         }
     }

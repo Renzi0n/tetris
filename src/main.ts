@@ -1,6 +1,5 @@
-import { Game } from "./Game";
+import { GameController } from "./GameController";
 
-const game = new Game();
-game.start();
+new GameController();
 
 export {};
