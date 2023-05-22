@@ -1,68 +1,63 @@
 import { Game } from "../Game";
-const modal = document.querySelector('#pause-menu') as HTMLElement;
-const closeModalBtn = document.querySelector('#close-pause-menu') as HTMLElement;
-const start = document.querySelector('#start') as HTMLElement;
-const restart = document.querySelector('#restart') as HTMLElement;
-const pause = document.querySelector('#pause') as HTMLElement;
+import { CanvasField, Pause, StartMenu } from "../Components";
+import { render, RenderPosition, ScoreData } from "../common";
+import { ScoreMenu } from "../Components/ScoreMenu";
 
 export class GameController {
     constructor() {
-        document.addEventListener('keydown', this.onKeydownStart)
-        document.addEventListener('keydown', this.onKeydownRestart)
-        start.addEventListener('click', this.start)
-        restart.addEventListener('click', this.restart)
+        document.addEventListener('keydown', this._onEnterKeydown)
+        this._startMenu = new StartMenu([2000, 1123, 1001, 332], this._start);
+        render(document.querySelector('#start-menu'), this._startMenu.getElement(), RenderPosition.AFTERBEGIN);
     }
 
-    onKeydownStart = (evt: KeyboardEvent) => {
-        if (evt.code === 'Space' || 'Enter') this.start();
+    private _startMenu: StartMenu | null = null;
+
+    private _canvasField: CanvasField | null = null;
+
+    private _scoreMenu: ScoreMenu | null = null;
+
+    private _game: Game | null = null;
+
+    private _onEnterKeydown = (evt: KeyboardEvent) => {
+        if (evt.code === 'Enter') this._start(); 
     }
 
-    onKeydownRestart = (evt: KeyboardEvent) => {
-        if (evt.code === 'Backspace') this.restart();
-    }
+    private _isPaused = false;
 
-    restart = () => {
-        this.game?.stop();
-        this.start();
-    }
+    private _pause: Pause | null = null;
 
-    start = () => {
-        document.removeEventListener('keydown', this.onKeydownStart);
-        closeModalBtn.addEventListener('click', this.unpause)
-        document.addEventListener('keydown', (evt: KeyboardEvent) => {
-            if (evt.code === 'Enter') {
-                if (!this.isPause) this.pause();
-                else this.unpause();
+    private _start = () => {
+        this._startMenu?.removeElement();
+        document.removeEventListener('keydown', this._onEnterKeydown)
+
+        this._canvasField = new CanvasField();
+        render(document.querySelector('#game'), this._canvasField.getElement(), RenderPosition.AFTERBEGIN);
+
+        this._game = new Game(this._startMenu!.startLevel, this._canvasField?.getElement(), this._updateScore.bind(this));
+        this._game!.start();
+
+        this._scoreMenu = new ScoreMenu();
+        render(document.querySelector('#game'), this._scoreMenu.getElement(), RenderPosition.AFTERBEGIN);
+
+        document.addEventListener('keydown', (evt) => {
+            if (evt.code === 'Escape' && !this._isPaused) {
+                this._game?.pause();
+
+                this._pause = new Pause(() => {});
+                render(document.querySelector('body'), this._pause.getElement(), RenderPosition.AFTERBEGIN);
+
+                this._isPaused = true;
+            } else if (evt.code === 'Escape' && this._isPaused) {
+                this._game?.continue();
+
+                this._pause?.removeElement();
+
+                this._isPaused = false;
             }
         })
-        pause.addEventListener('click', () => {
-            if (!this.isPause) this.pause();
-        });
-        this.game = new Game();
-        this.game.start();
     }
 
-    isPause = false;
-
-    pause = () => {
-        this.game!.pause();
-        this.isPause = true;
-        this.openModal();
+    private _updateScore(scoreData: ScoreData) {
+        this._scoreMenu?.updateScore(scoreData);
     }
-
-    unpause = () => {
-        this.game!.continue();
-        this.isPause = false;
-        this.closeModal();
-    }
-
-    closeModal() {
-        modal.style.display = 'none';
-    }
-
-    openModal() {
-        modal.style.display = 'block';
-    }
-
-    game: Game | null = null;
 }

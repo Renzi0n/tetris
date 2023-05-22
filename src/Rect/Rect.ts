@@ -11,13 +11,14 @@ export interface RectData {
 };
 
 export class Rect {
-    constructor(startX?: number, startY?: number) {
+    constructor(startX?: number, startY?: number, color?: FIGURES) {
         this._data = {
             x: startX || 0,
             y: startY || 0,
             size: FIELD.RECT_SIZE,
             active: false,
             filled: false,
+            color,
         }
     }
 
@@ -33,6 +34,10 @@ export class Rect {
 
     get color() {
         return this._data.color;
+    }
+
+    set color(color: FIGURES | undefined) {
+        this._data.color = color;
     }
 
     get y() {

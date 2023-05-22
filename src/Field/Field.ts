@@ -2,13 +2,16 @@ import { FIELD, FIGURES } from "../common";
 import { getRandomIntFromRange, getRandomInt } from "../common";
 import { Rect } from "../Rect";
 
-type direction = 'default' | 'left' | 'right' | 'down';
+type direction = 'default' | 'left' | 'right' | 'down' | 'immediately-down';
 type directionsMap =  Record<direction, (rect: Rect) => { xInd: number; yInd: number; }>;
 
+const SCORES_FOR_LINES = [100, 300, 700, 1500];
+
 export class Field {
-    constructor() {
+    constructor(startLevel: number) {
         this._data = new Array(FIELD.H / FIELD.RECT_SIZE).fill(0).map((_, yInd) => (new Array(FIELD.W / FIELD.RECT_SIZE).fill(0).map((_, xInd) => new Rect(xInd * FIELD.RECT_SIZE, yInd * FIELD.RECT_SIZE))));
         this.generateFigure();
+        this.level = startLevel;
     }
 
     private _data: Rect[][] = [];
@@ -50,6 +53,47 @@ export class Field {
         }, [] as Rect[])
     }
 
+    get activeRectsProjection() {
+        let maxActiveEls: Rect[] = [];
+        let maxActiveY = 0;
+        this.activeRects.forEach((active) => active.y > maxActiveY ? maxActiveY = active.y : maxActiveY);
+        this.activeRects.forEach((active) => !this.data[active.y / FIELD.RECT_SIZE + 1] || !this.data[active.y / FIELD.RECT_SIZE + 1][active.x / FIELD.RECT_SIZE].active ? maxActiveEls.push(active) : maxActiveEls);
+        let activeRect: Rect = this.activeRects.find((act) => act.y === maxActiveY) as Rect;
+        let highestFilledRect: Rect | undefined = this.onlyFilledRects.find((fill) => fill.x === activeRect.x);
+        this.onlyFilledRects.forEach((filled) => {
+            let maxY = highestFilledRect ? highestFilledRect.y : FIELD.H + 1;
+            maxActiveEls.forEach((act) => {
+                if ((act.x === filled.x && filled.y < maxY)) {
+                    highestFilledRect = filled;
+                    activeRect = act;
+                };
+            })
+        });
+        return this.activeRects.reduce((acc, rect) => {
+            if (highestFilledRect) {
+                const projRect = this._data[(highestFilledRect.y / FIELD.RECT_SIZE - (activeRect.y / FIELD.RECT_SIZE - rect.y / FIELD.RECT_SIZE) - 1)][rect.x / FIELD.RECT_SIZE];
+                acc.push(new Rect(projRect.x, projRect.y, this.activeRects[0].color));
+            } else {
+                const projRect = this._data[this.data.length - 1 - (maxActiveY / FIELD.RECT_SIZE - rect.y / FIELD.RECT_SIZE)][rect.x / FIELD.RECT_SIZE];
+                acc.push(new Rect(projRect.x, projRect.y, this.activeRects[0].color));
+            }
+
+            return acc;
+        }, [] as Rect[])
+    }
+
+    get onlyFilledRects() {
+        return this._data.reduce((acc, line) => {
+            line.map((rect) => {
+                if (rect.filled && !rect.active) {
+                    acc.push(rect);
+                }
+            })
+
+            return acc;
+        }, [] as Rect[])
+    }
+
     get filledRects() {
         return this._data.reduce((acc, line) => {
             line.map((rect) => {
@@ -65,14 +109,9 @@ export class Field {
     isOver = false;
 
     checkIsOver = (willGeneratedRects: Rect[]) => {
-        if (this.activeRects.length) {
-            return willGeneratedRects.every((rect, ind) => {
-                if (rect.x === this.activeRects[ind].x && rect.y === this.activeRects[ind].y) return true;
-                return false;
-            });
-        }
-
-        return false;
+        return willGeneratedRects.some((rect) => {
+            return this.filledRects.some((actRect) => rect.x === actRect.x && rect.y === actRect.y);
+        });
     }
 
     generatingFigureMap = {
@@ -84,12 +123,7 @@ export class Field {
             const thirdRect = this._data[2][firstRectX];
             const fourthRect = this._data[2][firstRectX - 1];
 
-            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
-
-            firstRect.activate(FIGURES.J);
-            secondRect.activate(FIGURES.J);
-            thirdRect.activate(FIGURES.J);
-            fourthRect.activate(FIGURES.J);
+            return [firstRect, secondRect, thirdRect, fourthRect];
         },
         [FIGURES.I]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 1);
@@ -99,12 +133,7 @@ export class Field {
             const thirdRect = this._data[2][firstRectX];
             const fourthRect = this._data[3][firstRectX];
 
-            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
-
-            firstRect.activate(FIGURES.I);
-            secondRect.activate(FIGURES.I);
-            thirdRect.activate(FIGURES.I);
-            fourthRect.activate(FIGURES.I);
+            return [firstRect, secondRect, thirdRect, fourthRect];
         },
         [FIGURES.O]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 2);
@@ -114,12 +143,7 @@ export class Field {
             const thirdRect = this._data[1][firstRectX];
             const fourthRect = this._data[1][firstRectX + 1];
 
-            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
-
-            firstRect.activate(FIGURES.O);
-            secondRect.activate(FIGURES.O);
-            thirdRect.activate(FIGURES.O);
-            fourthRect.activate(FIGURES.O);
+            return [firstRect, secondRect, thirdRect, fourthRect];
         },
         [FIGURES.L]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 2);
@@ -129,12 +153,7 @@ export class Field {
             const thirdRect = this._data[2][firstRectX];
             const fourthRect = this._data[2][firstRectX + 1];
 
-            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
-
-            firstRect.activate(FIGURES.L);
-            secondRect.activate(FIGURES.L);
-            thirdRect.activate(FIGURES.L);
-            fourthRect.activate(FIGURES.L);
+            return [firstRect, secondRect, thirdRect, fourthRect];
         },
         [FIGURES.Z]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 3);
@@ -143,13 +162,8 @@ export class Field {
             const secondRect = this._data[0][firstRectX + 1];
             const thirdRect = this._data[1][firstRectX + 1];
             const fourthRect = this._data[1][firstRectX + 2];
-            
-            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
-            
-            firstRect.activate(FIGURES.Z);
-            secondRect.activate(FIGURES.Z);
-            thirdRect.activate(FIGURES.Z);
-            fourthRect.activate(FIGURES.Z);
+
+            return [firstRect, secondRect, thirdRect, fourthRect];
         },
         [FIGURES.T]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 3);
@@ -159,12 +173,7 @@ export class Field {
             const thirdRect = this._data[0][firstRectX + 1];
             const fourthRect = this._data[1][firstRectX + 2];
 
-            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
-
-            firstRect.activate(FIGURES.T);
-            secondRect.activate(FIGURES.T);
-            thirdRect.activate(FIGURES.T);
-            fourthRect.activate(FIGURES.T);
+            return [firstRect, secondRect, thirdRect, fourthRect];
         },
         [FIGURES.S]: () => {
             const firstRectX = getRandomIntFromRange(0, this._data[0].length - 3);
@@ -173,44 +182,54 @@ export class Field {
             const secondRect = this._data[1][firstRectX + 1];
             const thirdRect = this._data[0][firstRectX + 1];
             const fourthRect = this._data[0][firstRectX + 2];
-            
-            this.isOver = this.checkIsOver([firstRect, secondRect, thirdRect, fourthRect]);
 
-            firstRect.activate(FIGURES.S);
-            secondRect.activate(FIGURES.S);
-            thirdRect.activate(FIGURES.S);
-            fourthRect.activate(FIGURES.S);
+            return [firstRect, secondRect, thirdRect, fourthRect];
         },
     };
 
     generateFigure = () => {
         const randomFigureKey = getRandomInt(Object.keys(this.generatingFigureMap)) as keyof typeof this.generatingFigureMap;
         const applyFigure = this.generatingFigureMap[randomFigureKey];
-        applyFigure();
+        const figure = applyFigure();
+            
+        this.isOver = this.checkIsOver(figure);
+        if (!this.isOver) figure.forEach(rect => rect.activate(randomFigureKey));
     }
 
     score = 0;
 
+    lines = 0;
+
+    nextLevelLines = 10;
+
+    level = 10;
+
+    get maxFilledYInd() {
+        return this.filledRects
+    }
+
     directionsMap: directionsMap = {
         'default': (rect: Rect) => ({
             yInd: (rect.y / FIELD.RECT_SIZE) + 1,
-            xInd: (rect.data.x / FIELD.RECT_SIZE)
+            xInd: (rect.x / FIELD.RECT_SIZE)
         }),
         'left': (rect: Rect) => ({
             yInd: (rect.y / FIELD.RECT_SIZE),
-            xInd: (rect.data.x / FIELD.RECT_SIZE) - 1
+            xInd: (rect.x / FIELD.RECT_SIZE) - 1
         }),
         'right': (rect: Rect) => ({
             yInd: (rect.y / FIELD.RECT_SIZE),
-            xInd: (rect.data.x / FIELD.RECT_SIZE) + 1
+            xInd: (rect.x / FIELD.RECT_SIZE) + 1
         }),
         'down': (rect: Rect) => ({
             yInd: (rect.y / FIELD.RECT_SIZE) + 1,
-            xInd: (rect.data.x / FIELD.RECT_SIZE)
+            xInd: (rect.x / FIELD.RECT_SIZE)
+        }),
+        'immediately-down': (rect: Rect) => ({
+            yInd: (rect.y / FIELD.RECT_SIZE) + 1,
+            xInd: (rect.x / FIELD.RECT_SIZE)
         }),
     }
-
-    scoresForFillingLines = [100, 300, 700, 1500];
 
     dropFilledLines = () => {
         let filledLinesIndexes: number[] = [];
@@ -221,8 +240,14 @@ export class Field {
         const filledLinesCount = filledLinesIndexes.length;
 
         if (filledLinesCount > 0) {
-            if (this.scoresForFillingLines[filledLinesCount - 1]) this.score += this.scoresForFillingLines[filledLinesCount - 1];
-            else this.score += this.scoresForFillingLines.at(-1)!;
+            this.lines += filledLinesCount;
+            if (SCORES_FOR_LINES[filledLinesCount - 1]) this.score += SCORES_FOR_LINES[filledLinesCount - 1];
+            else this.score += SCORES_FOR_LINES.at(-1)!;
+
+            if (this.lines >= this.nextLevelLines) {
+                this.level += 1;
+                this.nextLevelLines = this.nextLevelLines + 10;
+            }
 
             filledLinesIndexes.forEach((filledLineIndex) => {
                 this._data.splice(filledLineIndex, 1);
@@ -240,7 +265,13 @@ export class Field {
         this.generateFigure();
     }
 
+    isImmediatelyDown = false;
+
     moveActiveFigure = (direction: direction) => {
+        if (direction === 'immediately-down') this.isImmediatelyDown = true;
+        if (this.isImmediatelyDown) direction = 'immediately-down';
+        console.log(direction)
+
         const isAllow = this.activeRects.every((rect) => {
             const { yInd, xInd } = this.directionsMap[direction](rect);
             if (yInd < this.data.length && xInd >= 0 && xInd < this.data[0].length && this.data[yInd]){
@@ -257,13 +288,15 @@ export class Field {
                 return rect;
             });
             if (direction === 'down') this.score += 1;
+            else if (direction === 'immediately-down') this.score += 2;
 
             prevRects.forEach((rect) => {
                 const { yInd, xInd } = this.directionsMap[direction](rect);
 
                 this._data[yInd][xInd].activate(prevColor);
             });
-        } else if (direction === 'down' || direction === 'default') {
+        } else if (direction === 'down' || direction === 'immediately-down' || direction === 'default') {
+            this.isImmediatelyDown = false;
             this.stopActiveFigure();
         }
     }
